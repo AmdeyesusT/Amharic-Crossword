@@ -1,0 +1,25 @@
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environment (Very important to ignore the whole folder!)
+venv/
+env/
+.venv/
+
+# Environment Variables (Your secrets)
+ignore.env
+
+# Database
+db.sqlite3
+
+# Django specific
+local_settings.py
+media/
+staticfiles/
+
+# IDE settings
+.vscode/
+.idea/
