@@ -1,11 +1,13 @@
+from django.conf import settings
 from django.db import models
 
 # use this collation "am-ET-x-icu" 
 # ex: SELECT * FROM your_table ORDER BY your_column COLLATE "am-ET-x-icu";
 
 class WordBank(models.Model):
-    word = models.CharField(max_length=100)
+    word = models.CharField(max_length=200)
     clue_hint = models.TextField()
+    english_word = models.CharField(max_length=200)
     category = models.CharField(max_length=50, db_index=True)
 
     def __str__(self):
@@ -19,11 +21,15 @@ class Puzzle(models.Model):
     
     grid_data = models.JSONField(help_text="The generated grid layout and solution mapping")
     
-    release_date = models.DateField(unique=True, db_index=True)
+    release_date = models.DateField(unique=False, db_index=True, null=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL,null=True,related_name='puzzles_created')
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL,null=True,related_name='puzzles_updated')
 
     def __str__(self):
-        return f"{self.title} - {self.release_date}"
+        return f"{self.title} (Created: {self.created_at.strftime('%Y-%m-%d')})"
 
 class Clue(models.Model):
     puzzle = models.ForeignKey(Puzzle, on_delete=models.CASCADE, related_name='clues')

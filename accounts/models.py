@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from gameplay.models import Leaderboard
 
 class User(AbstractUser):
     AUTH_CHOICES = [
@@ -14,10 +15,9 @@ class User(AbstractUser):
         choices=AUTH_CHOICES, 
         default='local'
     )
-    is_guest = models.BooleanField(default=False)
     
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
+    REQUIRED_FIELDS = ['']
 
     def __str__(self):
         return self.email
@@ -27,8 +27,11 @@ class Profile(models.Model):
     avatar_url = models.URLField(blank=True, null=True)
     bio = models.TextField(max_length=500, blank=True)
     
-    total_points = models.PositiveIntegerField(default=0)
-    all_time_rank = models.PositiveIntegerField(null=True, blank=True)
+    @property
+    def total_points(self):
+        """Calculates total points from the Leaderboard table on demand."""
+        # This sums up every score row for this specific user
+        return Leaderboard.objects.filter(user=self.user).aggregate(Sum('score'))['score__sum'] or 0
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

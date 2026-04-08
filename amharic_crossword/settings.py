@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load the .env file
-load_dotenv(os.path.join(BASE_DIR, '.env'))
+load_dotenv(os.path.join(BASE_DIR, 'ignore.env'))
 
 
 # Quick-start development settings - unsuitable for production
@@ -44,6 +44,9 @@ INSTALLED_APPS = [
     'accounts',
     'puzzles',
     'gameplay',
+    'rest_framework',
+    'drf_spectacular',
+    'corsheaders',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
@@ -128,3 +131,16 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Amharic Crossword API',
+    'DESCRIPTION': 'Backend API for the Amharic Ge\'ez Crossword Game',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # This ensures your JWT "Authorize" button appears in Swagger
+    'COMPONENT_SPLIT_PATCH': True,
+}

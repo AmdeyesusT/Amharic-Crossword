@@ -2,12 +2,13 @@ from django.db import models
 from django.conf import settings
 
 class UserProgress(models.Model):
-    """Tracks a Lazy User's current typed letters in an active puzzle."""
+    """Tracks a User's current typed letters in an active puzzle."""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     puzzle = models.ForeignKey('puzzles.Puzzle', on_delete=models.CASCADE)
     
     current_state = models.JSONField(default=dict)
     
+    score = models.PositiveIntegerField(default=0)
     is_completed = models.BooleanField(default=False)
     time_spent = models.PositiveIntegerField(default=0, help_text="Time in seconds")
     last_played = models.DateTimeField(auto_now=True)

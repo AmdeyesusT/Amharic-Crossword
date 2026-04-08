@@ -3,57 +3,47 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
-import uuid
+from .models import Profile
+from drf_spectacular.utils import extend_schema
+from .serializers import MyTokenObtainPairSerializer, RegisterSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 User = get_user_model()
 
-class GuestUserCreateView(APIView):
-    """
-    Step 1: Create a 'Shadow User' when a guest first lands on the site.
-    """
+class RegisterView(APIView):
+    @extend_schema(request=RegisterSerializer, responses={201: RegisterSerializer})
     def post(self, request):
-        random_id = str(uuid.uuid4())[:8]
-        username = f"guest_{random_id}"
+        serializer = RegisterSerializer(data=request.data)
         
-        user = User.objects.create(
-            username=username,
-            is_guest=True,
-            auth_type='local'
-        )
-        from .models import Profile
-        Profile.objects.create(user=user)
+        # 1. This one line replaces all your manual 'if not email' checks
+        if serializer.is_valid():
+            # 2. Save the user (using the logic we put in the serializer)
+            user = serializer.save()
+            
+            # 3. Create the profile
+            Profile.objects.create(user=user)
+            
+            # 4. Return the tokens
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                "user": serializer.data
+            }, status=status.HTTP_201_CREATED)
         
-        refresh = RefreshToken.for_user(user)
-        
-        return Response({
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
-            'username': user.username,
-            'is_guest': user.is_guest
-        }, status=status.HTTP_201_CREATED)
+        # 5. If data is bad (e.g. invalid Amharic characters or short password), 
+        # it returns the exact error message automatically
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class ConvertGuestToMemberView(APIView):
+class LoginView(TokenObtainPairView):
     """
-    Step 2: Upgrade a Guest to a Full Member without losing their Amharic progress.
+    Takes email and password, returns JWT Access and Refresh tokens 
+    plus user details.
     """
-    def post(self, request):
-        user = request.user
-        
-        if not user.is_authenticated or not user.is_guest:
-            return Response({"error": "Only guests can convert to members."}, status=400)
-
-        email = request.data.get('email')
-        password = request.data.get('password')
-
-        if not email or not password:
-            return Response({"error": "Email and password are required."}, status=400)
-
-        if User.objects.filter(email=email).exists():
-            return Response({"error": "A user with this email already exists."}, status=400)
-
-        user.email = email
-        user.set_password(password)
-        user.is_guest = False
-        user.save()
-
-        return Response({"message": "Successfully upgraded to a full account!"}, status=200)
+    serializer_class = MyTokenObtainPairSerializer
+    @extend_schema(
+        request=MyTokenObtainPairSerializer,
+        responses={200: MyTokenObtainPairSerializer}
+    )
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
